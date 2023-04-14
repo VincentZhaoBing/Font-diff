@@ -94,7 +94,7 @@ def main():
         ch_idx += cfg.batch_size
 
         model_kwargs["y"] = classes
-        img = th.tensor(img_pre_pros(sty_img_path, cfg.image_size), requires_grad=False).cuda().repeat(cfg.batch_size, 1, 1, 1)
+        img = th.tensor(img_pre_pros(sty_img_path, cfg.image_size), requires_grad=False).cpu().repeat(cfg.batch_size, 1, 1, 1)
         sty_feat = model.sty_encoder(img)
         model_kwargs["sty"] = sty_feat
         if cfg.stroke_path is not None:
