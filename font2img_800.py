@@ -75,9 +75,9 @@ for idx, (label, item) in enumerate(zip(range(len(all_image_paths)),all_image_pa
         index = random.randint(0, 6624)
         if not os.path.exists(path_full):
             os.mkdir(path_full)
-        if (np.sum(np.array(img) / 255.) < 18000) and (index <= 800):
-        # if np.sum(np.array(img) / 255.) < 18000:
+        if (np.sum(np.array(img) / 255.) < 28000):
             img_cnt += 1
             img.save(os.path.join(path_full, "%05d.png" % (cnt)))
-
+        if cnt >= 20:
+            break
 
