@@ -67,8 +67,12 @@ for idx, (label, item) in enumerate(zip(range(len(all_image_paths)),all_image_pa
     font_name = item.split('/')[-1].split('.')[0]
     chars = get_char_list_from_ttf(item)  #
     img_cnt = 0
+    data_set_array = [0,1,214,2557,3747,4021,6614,6621,5909,5140]
     for (chara, cnt) in zip(characters, range(len(characters))):
-        # print("{} / {} ".format(cnt, chara))
+        # print("{} / {} total:{}".format(cnt, chara,len(characters)))
+        if cnt not in data_set_array:
+            continue
+
         img = draw_example(chara, src_font, args.img_size, (args.img_size-args.chara_size)/2, (args.img_size-args.chara_size)/2)
         path_full = os.path.join(args.save_path, 'id_%d'%(label))
         # print(np.sum(np.array(img) / 255.))
@@ -78,6 +82,4 @@ for idx, (label, item) in enumerate(zip(range(len(all_image_paths)),all_image_pa
         if (np.sum(np.array(img) / 255.) < 28000):
             img_cnt += 1
             img.save(os.path.join(path_full, "%05d.png" % (cnt)))
-        if cnt >= 20:
-            break
 
