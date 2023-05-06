@@ -34,179 +34,28 @@ def main():
         cfg = yaml.load(f, Loader=yaml.FullLoader)
     cfg = AttrDict(create_cfg(cfg))
 
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model200000.pt'
-    tmp_cfg.sty_img_path = './reference_image/test/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-20w/id-0'
-    infer(tmp_cfg)
-
     #测试id_1
     print("第二组数据")
     tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model200000.pt'
-    tmp_cfg.sty_img_path = './reference_image/test/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-20w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model200000.pt'
-    tmp_cfg.sty_img_path = './reference_image/test/id_5/00019.png'
-    tmp_cfg.img_save_path = './result/ret-20w/id-5'
-    infer(tmp_cfg)
-
-    return
-
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model040000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-04w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    print(tmp_cfg)
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model040000.pt'
+    tmp_cfg.model_path = './trained_models/model180000.pt'
     tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-04w/id-1'
+    tmp_cfg.img_save_path = './result/ret-test-18w/id-1'
     infer(tmp_cfg)
 
     #测试id_5
     print("第三组数据")
     tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model040000.pt'
+    tmp_cfg.model_path = './trained_models/model180000.pt'
     tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-04w/id-5'
-    infer(tmp_cfg)
-
-
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model060000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-06w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model060000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-06w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model060000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-06w/id-5'
-    infer(tmp_cfg)
-
-
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model080000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-08w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model080000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-08w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model080000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-08w/id-5'
+    tmp_cfg.img_save_path = './result/ret-test-18w/id-2'
     infer(tmp_cfg)
 
     #测试id_0
     print("第一组数据")
     tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model100000.pt'
+    tmp_cfg.model_path = './trained_models/model180000.pt'
     tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-10w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model100000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-10w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model100000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-10w/id-5'
-    infer(tmp_cfg)
-
-
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model120000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-12w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model120000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-12w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model120000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-12w/id-5'
-    infer(tmp_cfg)
-
-
-    #测试id_0
-    print("第一组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model140000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_0/00019.png'
-    tmp_cfg.img_save_path = './result/ret-14w/id-0'
-    infer(tmp_cfg)
-
-    #测试id_1
-    print("第二组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model140000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_1/00019.png'
-    tmp_cfg.img_save_path = './result/ret-14w/id-1'
-    infer(tmp_cfg)
-
-    #测试id_5
-    print("第三组数据")
-    tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg.model_path = './trained_models/model140000.pt'
-    tmp_cfg.sty_img_path = './reference_image/train/id_2/00019.png'
-    tmp_cfg.img_save_path = './result/ret-14w/id-5'
+    tmp_cfg.img_save_path = './result/ret-test-18w/id-0'
     infer(tmp_cfg)
 
 
