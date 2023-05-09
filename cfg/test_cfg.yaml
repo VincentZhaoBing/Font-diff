@@ -11,11 +11,11 @@ attention_resolutions: '40, 20, 10'
 use_ddim: True
 timestep_respacing: ddim25
 stroke_path: './chinese_stroke.txt'
-model_path: './trained_models/model030000.pt'
-sty_img_path: './reference_image/00510.png'
+model_path: './trained_models/model180000.pt'
+sty_img_path: './reference_image/test/id_0/00019.png'
 total_txt_file: './total_chn.txt'
 gen_txt_file: './gen_char.txt'
 img_save_path: './result'
-classifier_free: True
+classifier_free: False
 cont_scale: 3.0
 sk_scale: 3.0

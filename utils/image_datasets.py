@@ -26,7 +26,11 @@ def load_data(
     chars_stroke = None
     class_names = [bf.basename(path).split("_")[0] for path in all_files]
     sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
-    classes = [sorted_classes[x] for x in class_names]
+    classes = [int(x.split(".")[0]) for x in class_names]
+    print("class_names\n", class_names)
+    print("sorted_classes\n", sorted_classes)
+    print("classes\n", classes)
+
     sty_class_names = [bf.dirname(path).split("/")[-1] for path in all_files]
     sty_sorted_classes = {x: i for i, x in enumerate(sorted(set(sty_class_names)))}
     sty_classes = [sty_sorted_classes[x] for x in sty_class_names]
