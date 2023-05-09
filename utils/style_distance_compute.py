@@ -27,7 +27,7 @@ def load_model(sty_encoder_path):
     return model
 
 
-def load_images(data_dir):
+def load_images(data_dir, index):
     # 传入数据集根目录
     print("loading learned sty image")
     style_font = os.listdir(data_dir)
@@ -36,7 +36,9 @@ def load_images(data_dir):
         fonts = os.listdir(os.path.join(data_dir, sf))
         if len(fonts) != 0:
             sty_cls = sf.split('_')[1]
-            image_path = os.path.join(data_dir, sf, fonts[0])
+            image_path = os.path.join(data_dir, sf, '%05d.png' % index)
+            if not os.path.exists(image_path):
+                continue
             single_image = load_single_image(image_path)
             if single_image is not None:
                 images[int(sty_cls)] = single_image
@@ -57,25 +59,29 @@ def load_single_image(path):
     return image
 
 
-def find_similar_sty(unknow_sty_path, data_dir, encoder_ckpt_path):
+def find_similar_sty(unknow_sty_path, data_dir, encoder_ckpt_path, index):
     with torch.no_grad():
         encoder = load_model(encoder_ckpt_path).eval()
-        images = load_images(data_dir)
+        images = load_images(data_dir, index)
         unknow_sty_image = load_single_image(unknow_sty_path)
         base_shape = unknow_sty_image.shape
         unknow_sty_feature = encoder(torch.reshape(unknow_sty_image, [1, base_shape[0], base_shape[1], base_shape[2]]))
 
-        distance = float('inf')
+        similarity = torch.zeros([1])
 
+        most_similar_cls_list = []
         most_similar_cls = None
 
         for cls, gt in images.items():
             learn_sty_feature = encoder(torch.reshape(gt, [1, base_shape[0], base_shape[1], base_shape[2]]))
-            d = mean_flat((unknow_sty_feature - learn_sty_feature) ** 2)
-            print("similar with sty {} distance {}".format(cls, d))
-            if d < distance:
-                distance = d
-                most_similar_cls = cls
+            # d = mean_flat((unknow_sty_feature - learn_sty_feature) ** 2)
+            d = torch.cosine_similarity(unknow_sty_feature, learn_sty_feature, dim=1)  # 余弦相似度 度量向量相似度
+            similarity = torch.cat([similarity, d], dim=0)
+            most_similar_cls_list.append(cls)
+            print("similar with sty {} similarity {}".format(cls, d.data))
+        similarity = similarity[1:]
+        most_similar_cls = most_similar_cls_list[torch.argmax(similarity, dim=0).int()]
+
         if most_similar_cls is not None:
             print("most similar sty cls {} path {}".format(most_similar_cls,
                                                            os.path.join(data_dir, 'id_{}'.format(most_similar_cls))))
@@ -84,4 +90,5 @@ def find_similar_sty(unknow_sty_path, data_dir, encoder_ckpt_path):
 
 
 if __name__ == '__main__':
-    find_similar_sty('../result/00009.png', '../data_dir', '../pretrained_models/chinese_styenc.ckpt')
+    find_similar_sty('../reference_image/test/id_10/00014.png', '../data_dir',
+                     '../pretrained_models/chinese_styenc.ckpt', 14)
