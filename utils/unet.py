@@ -142,17 +142,17 @@ class ResBlock(TimestepBlock):
             dropout,
             out_channels=None,
             use_conv=False,
-            use_scale_shift_norm=False,
+            use_scale_shift_norm=False,  # True
             dims=2,
             use_checkpoint=False,
             up=False,
             down=False,
     ):
         super().__init__()
-        self.channels = channels
-        self.emb_channels = emb_channels
+        self.channels = channels  # 128
+        self.emb_channels = emb_channels  # 512
         self.dropout = dropout
-        self.out_channels = out_channels or channels
+        self.out_channels = out_channels or channels  # 128
         self.use_conv = use_conv
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
@@ -160,7 +160,7 @@ class ResBlock(TimestepBlock):
         self.in_layers = nn.Sequential(
             normalization(channels),
             nn.SiLU(),
-            conv_nd(dims, channels, self.out_channels, 3, padding=1),
+            conv_nd(dims, channels, self.out_channels, 3, padding=1),  # conv2d(128,128,(3,3),padding = 1) out shape = [n,128,h,w]
         )
 
         self.updown = up or down
@@ -179,7 +179,7 @@ class ResBlock(TimestepBlock):
             linear(
                 emb_channels,
                 2 * self.out_channels if use_scale_shift_norm else self.out_channels,
-            ),
+            ), # fully connected fc(512,256)
         )
 
         self.out_layers = nn.Sequential(
@@ -188,7 +188,7 @@ class ResBlock(TimestepBlock):
             nn.Dropout(p=dropout),
             zero_module(
                 conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)
-            ),
+            ), # conv2d(128,128,(3,3),padding = 1) out shape = [n,128,h,w]
         )
 
         if self.out_channels == channels:
@@ -221,13 +221,13 @@ class ResBlock(TimestepBlock):
 
         if self.use_scale_shift_norm:
             out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
-            scale, shift = th.chunk(emb_out, 2, dim=1)
+            scale, shift = th.chunk(emb_out, 2, dim=1) # scale, shift shape = [b,128,h,w]
             h = out_norm(h) * (1 + scale) + shift
             h = out_rest(h)
         else:
             h = h + emb_out
             h = self.out_layers(h)
-        return self.skip_connection(x) + h
+        return self.skip_connection(x) + h # residual f(x) = x + g_theta(x)
 
 
 class AttentionBlock(nn.Module):
@@ -241,10 +241,10 @@ class AttentionBlock(nn.Module):
     def __init__(
             self,
             channels,
-            num_heads=1,
+            num_heads=1,  # 4
             num_head_channels=-1,
             use_checkpoint=False,
-            use_new_attention_order=False,
+            use_new_attention_order=False,  # Fasle
     ):
         super().__init__()
         self.channels = channels
@@ -257,7 +257,7 @@ class AttentionBlock(nn.Module):
             self.num_heads = channels // num_head_channels
         self.use_checkpoint = use_checkpoint
         self.norm = normalization(channels)
-        self.qkv = conv_nd(1, channels, channels * 3, 1)
+        self.qkv = conv_nd(1, channels, channels * 3, 1)  # conv1d (256,768)
         if use_new_attention_order:
             # split qkv before split heads
             self.attention = QKVAttention(self.num_heads)
@@ -272,11 +272,11 @@ class AttentionBlock(nn.Module):
 
     def _forward(self, x):
         b, c, *spatial = x.shape
-        x = x.reshape(b, c, -1)
-        qkv = self.qkv(self.norm(x))
-        h = self.attention(qkv)
-        h = self.proj_out(h)
-        return (x + h).reshape(b, c, *spatial)
+        x = x.reshape(b, c, -1)  # x [b,256,1600]
+        qkv = self.qkv(self.norm(x))  # qkv [b,768,1600]
+        h = self.attention(qkv)  # [b,256,1600]
+        h = self.proj_out(h)  # [b,256,1600]
+        return (x + h).reshape(b, c, *spatial)  # [b,256,40,40]
 
 
 def count_flops_attn(model, _x, y):
@@ -306,7 +306,7 @@ class QKVAttentionLegacy(nn.Module):
 
     def __init__(self, n_heads):
         super().__init__()
-        self.n_heads = n_heads
+        self.n_heads = n_heads  # 4
 
     def forward(self, qkv):
         """
@@ -315,17 +315,17 @@ class QKVAttentionLegacy(nn.Module):
         :param qkv: an [N x (H * 3 * C) x T] tensor of Qs, Ks, and Vs.
         :return: an [N x (H * C) x T] tensor after attention.
         """
-        bs, width, length = qkv.shape
+        bs, width, length = qkv.shape  # [b,768,1600]
         assert width % (3 * self.n_heads) == 0
-        ch = width // (3 * self.n_heads)
-        q, k, v = qkv.reshape(bs * self.n_heads, ch * 3, length).split(ch, dim=1)
+        ch = width // (3 * self.n_heads)  # 64
+        q, k, v = qkv.reshape(bs * self.n_heads, ch * 3, length).split(ch, dim=1)  # q k v shape = [4*b,64,1600]
         scale = 1 / math.sqrt(math.sqrt(ch))
-        weight = th.einsum(
+        weight = th.einsum(  # matrix compute get weight matrix shape = [4*b,1600,1600]
             "bct,bcs->bts", q * scale, k * scale
         )  # More stable with f16 than dividing afterwards
-        weight = th.softmax(weight.float(), dim=-1).type(weight.dtype)
-        a = th.einsum("bts,bcs->bct", weight, v)
-        return a.reshape(bs, -1, length)
+        weight = th.softmax(weight.float(), dim=-1).type(weight.dtype)  # softmax to enhance the most import weight
+        a = th.einsum("bts,bcs->bct", weight, v)  # self_attention = weight * v  shape[4*b,64，1600]
+        return a.reshape(bs, -1, length)  # [b,64*4,1600]
 
     @staticmethod
     def count_flops(model, _x, y):
@@ -366,14 +366,15 @@ class QKVAttention(nn.Module):
     def count_flops(model, _x, y):
         return count_flops_attn(model, _x, y)
 
+
 class UNetWithStyEncoderModel(nn.Module):
     def __init__(
             self,
             image_size,
-            in_channels,
-            model_channels,
-            out_channels,
-            num_res_blocks,
+            in_channels,  # 3
+            model_channels,  # 128
+            out_channels,  # 3
+            num_res_blocks,  # 3
             attention_resolutions,
             dropout=0,
             channel_mult=(1, 2, 4, 8),
@@ -385,7 +386,7 @@ class UNetWithStyEncoderModel(nn.Module):
             num_heads=1,
             num_head_channels=-1,
             num_heads_upsample=-1,
-            use_scale_shift_norm=False,
+            use_scale_shift_norm=False,  # True
             resblock_updown=False,
             use_new_attention_order=False,
             use_stroke=False,
@@ -395,7 +396,7 @@ class UNetWithStyEncoderModel(nn.Module):
         if num_heads_upsample == -1:
             num_heads_upsample = num_heads
 
-        self.image_size = image_size
+        self.image_size = image_size  # 80
         self.in_channels = in_channels
         self.model_channels = model_channels
         self.out_channels = out_channels
@@ -412,39 +413,40 @@ class UNetWithStyEncoderModel(nn.Module):
         self.num_heads_upsample = num_heads_upsample
         self.use_stroke = use_stroke
 
-        time_embed_dim = model_channels * 4
+        time_embed_dim = model_channels * 4  # embed dim = 512
         self.time_embed = nn.Sequential(
-            linear(model_channels, time_embed_dim),
+            linear(model_channels, time_embed_dim),  # fully connected (128,512)
             nn.SiLU(),
-            linear(time_embed_dim, time_embed_dim),
+            linear(time_embed_dim, time_embed_dim),  # fully connected (512,512)
         )
 
         if self.num_classes is not None:
-            self.sty_encoder = StyleEncoder(sty_dim=128)
-            self.sty_emb_dim = time_embed_dim // 2
+            self.sty_encoder = StyleEncoder(sty_dim=128)  # vgg11 out dim = 512
+            self.sty_emb_dim = time_embed_dim // 2  # sty_emb dim = 256
             self.sty_emb = nn.Sequential(
-                linear(128, time_embed_dim),
+                linear(128, time_embed_dim),  # fully connected (128,512)
                 nn.SiLU(),
-                linear(time_embed_dim, self.sty_emb_dim),
+                linear(time_embed_dim, self.sty_emb_dim),  # fully connected (128,256)
             )
             if self.use_stroke:
-                self.stroke_emb_dim = time_embed_dim // 4
-                self.label_emb_dim = time_embed_dim // 4
-                self.stroke_emb = nn.Embedding(32, self.stroke_emb_dim // 32)
+                self.stroke_emb_dim = time_embed_dim // 4  # stroke_emb dim = 128
+                self.label_emb_dim = time_embed_dim // 4  # label_dim = 128
+                self.stroke_emb = nn.Embedding(32, self.stroke_emb_dim // 32)  # stroke_embed layer dim = (32,4)
             else:
                 self.label_emb_dim = time_embed_dim // 2
             self.label_emb = nn.Embedding(self.num_classes, self.label_emb_dim)
 
-        ch = input_ch = int(channel_mult[0] * model_channels)
+        ch = input_ch = int(channel_mult[0] * model_channels)  # initial ch = 1*128 = 128
         self.input_blocks = nn.ModuleList(
             [TimestepEmbedSequential(conv_nd(dims, in_channels, ch, 3, padding=1))]
+            # add first conv2d Conv2d(3,128,(3,3),padding = 1) out shape = (B,128,80,80)
         )
-        self._feature_size = ch
-        input_block_chans = [ch]
-        ds = image_size
+        self._feature_size = ch  # 128
+        input_block_chans = [ch]  # [128]
+        ds = image_size  # 80
         for level, mult in enumerate(channel_mult):
             for _ in range(num_res_blocks):
-                layers = [
+                layers = [  # add ResBlock(128,128) ResBlock(128,128) ResBlock(128,128)
                     ResBlock(
                         ch,
                         time_embed_dim,
@@ -455,7 +457,7 @@ class UNetWithStyEncoderModel(nn.Module):
                         use_scale_shift_norm=use_scale_shift_norm,
                     )
                 ]
-                ch = int(mult * model_channels)
+                ch = int(mult * model_channels)  # 128, 128,128
                 if ds in attention_resolutions:
                     layers.append(
                         AttentionBlock(
@@ -467,10 +469,10 @@ class UNetWithStyEncoderModel(nn.Module):
                         )
                     )
                 self.input_blocks.append(TimestepEmbedSequential(*layers))
-                self._feature_size += ch
-                input_block_chans.append(ch)
-            if level != len(channel_mult) - 1:
-                out_ch = ch
+                self._feature_size += ch  # 128 + 128 + 128 + 128
+                input_block_chans.append(ch)  # [128,128,128,128]
+            if level != len(channel_mult) - 1:  # 非最后一个level downSample 压缩图片大小
+                out_ch = ch  # 128
                 self.input_blocks.append(
                     TimestepEmbedSequential(
                         ResBlock(
@@ -484,7 +486,7 @@ class UNetWithStyEncoderModel(nn.Module):
                             down=True,
                         )
                         if resblock_updown
-                        else Downsample(
+                        else Downsample(  # add DownSample
                             ch, conv_resample, dims=dims, out_channels=out_ch
                         )
                     )
