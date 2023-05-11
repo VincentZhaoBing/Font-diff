@@ -71,13 +71,13 @@ def main():
     noise = None
 
     # gen txt
-    char2idx = {}
+    char2idx = {} # 获取字符对应的index
     with open(total_txt_file, 'r') as f:
         chars = f.readlines()
         for idx, char in enumerate(chars[0]):
             char2idx[char] = idx
         f.close()
-    char_idx = []
+    char_idx = [] # 获取待生成的字的index
     with open(gen_txt_file, 'r') as f1:
         genchars = f1.readlines()
         for char in genchars[0]:
@@ -90,15 +90,15 @@ def main():
     ch_idx = 0
     while len(all_images) * cfg.batch_size < cfg.num_samples:
         model_kwargs = {}
-        classes = th.tensor([i for i in char_idx[ch_idx:ch_idx + cfg.batch_size]], device=dist_util.dev())
+        classes = th.tensor([i for i in char_idx[ch_idx:ch_idx + cfg.batch_size]], device=dist_util.dev()) # 按batch获取字符index
         ch_idx += cfg.batch_size
 
         model_kwargs["y"] = classes
-        img = th.tensor(img_pre_pros(sty_img_path, cfg.image_size), requires_grad=False).cpu().repeat(cfg.batch_size, 1, 1, 1)
-        sty_feat = model.sty_encoder(img)
+        img = th.tensor(img_pre_pros(sty_img_path, cfg.image_size), requires_grad=False).cpu().repeat(cfg.batch_size, 1, 1, 1) #对应n个字，复制n份风格图片
+        sty_feat = model.sty_encoder(img) # 生成sty feature [N,128]
         model_kwargs["sty"] = sty_feat
         if cfg.stroke_path is not None:
-            chars_stroke = th.empty([0, 32], dtype=th.float32)
+            chars_stroke = th.empty([0, 32], dtype=th.float32) # stroke 向量
             with open(cfg.stroke_path, 'r') as f:
                 lines = f.readlines()
                 for line in lines:
@@ -132,16 +132,16 @@ def main():
 
         def model_fn(x_t, ts, **model_kwargs):
             if classifier_free:
-                repeat_time = model_kwargs["y"].shape[0] // x_t.shape[0]
-                x_t = x_t.repeat(repeat_time, 1, 1, 1)
-                ts = ts.repeat(repeat_time)
+                repeat_time = model_kwargs["y"].shape[0] // x_t.shape[0] #重复生成3次
+                x_t = x_t.repeat(repeat_time, 1, 1, 1) # 噪声复制3份
+                ts = ts.repeat(repeat_time) # timestep 向量也复制3份
 
                 if cfg.stroke_path is not None:
                     model_output = model(x_t, ts, **model_kwargs)
-                    model_output_y, model_output_stroke, model_output_uncond = model_output.chunk(3)
+                    model_output_y, model_output_stroke, model_output_uncond = model_output.chunk(3) # model_output_y丢弃stroke ，model_output_stroke丢弃content，model_output_uncond全丢弃
                     model_output = model_output_uncond + \
                                    cont_gudiance_scale * (model_output_y - model_output_uncond) + \
-                                   sk_gudiance_scale * (model_output_stroke - model_output_uncond)
+                                   sk_gudiance_scale * (model_output_stroke - model_output_uncond) #对应论文中的式(9)
 
                 else:
 
@@ -154,7 +154,7 @@ def main():
             return model_output
 
         sample_fn = (
-            diffusion.p_sample_loop if not cfg.use_ddim else diffusion.ddim_sample_loop
+            diffusion.p_sample_loop if not cfg.use_ddim else diffusion.ddim_sample_loop # ddim 加速ddpm反向过程
         )
         sample = sample_fn(
             model_fn,

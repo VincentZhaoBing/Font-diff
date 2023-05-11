@@ -77,7 +77,7 @@ class GaussianDiffusion:
     def __init__(
         self,
         *,
-        betas,
+        betas, # use ddim the shape is [25]
         model_mean_type,
         model_var_type,
         loss_type,
@@ -229,7 +229,7 @@ class GaussianDiffusion:
             else:
                 pred_xstart = process_xstart(
                     self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
-                )
+                ) # get x_0
             model_mean, _, _ = self.q_posterior_mean_variance(
                 x_start=pred_xstart, x_t=x, t=t
             )
@@ -403,14 +403,14 @@ class GaussianDiffusion:
 
     def ddim_sample(
         self,
-        model,
-        x,
-        t,
+        model, # model_fn
+        x, # 随机噪声
+        t, # STEP
         clip_denoised=True,
         denoised_fn=None,
         cond_fn=None,
         model_kwargs=None,
-        eta=0.0,
+        eta=0.0, # 0 DDIM
     ):
 
         out = self.p_mean_variance(
@@ -420,13 +420,13 @@ class GaussianDiffusion:
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
             model_kwargs=model_kwargs,
-        )
+        ) # get mean variance log variance predicted x_0
         if cond_fn is not None:
             out = self.condition_score(cond_fn, out, x, t, model_kwargs=model_kwargs)
 
         # Usually our model outputs epsilon, but we re-derive it
         # in case we used x_start or x_prev prediction.
-        eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
+        eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"]) # re compute epsilon ?
 
         alpha_bar = _extract_into_tensor(self.alphas_cumprod, t, x.shape)
         alpha_bar_prev = _extract_into_tensor(self.alphas_cumprod_prev, t, x.shape)
@@ -434,13 +434,13 @@ class GaussianDiffusion:
             eta
             * th.sqrt((1 - alpha_bar_prev) / (1 - alpha_bar))
             * th.sqrt(1 - alpha_bar / alpha_bar_prev)
-        )
+        ) # ddim  eta = 0 固定结果 eta = 1 等于ddpm
         # Equation 12.
         noise = th.randn_like(x)
         mean_pred = (
             out["pred_xstart"] * th.sqrt(alpha_bar_prev)
             + th.sqrt(1 - alpha_bar_prev - sigma ** 2) * eps
-        )
+        ) # true x_t-1
         nonzero_mask = (
             (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
         )  # no noise when t == 0
@@ -498,7 +498,7 @@ class GaussianDiffusion:
         if noise is not None:
             img = noise
         else:
-            img = th.randn(*shape, device=device)
+            img = th.randn(*shape, device=device) # get x_t
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:

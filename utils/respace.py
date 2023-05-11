@@ -4,14 +4,14 @@ import torch as th
 from .gaussian_diffusion import GaussianDiffusion
 
 
-def space_timesteps(num_timesteps, section_counts):
+def space_timesteps(num_timesteps, section_counts): # 1000 ddim25
 
     if isinstance(section_counts, str):
         if section_counts.startswith("ddim"):
             desired_count = int(section_counts[len("ddim") :])
             for i in range(1, num_timesteps):
                 if len(range(0, num_timesteps, i)) == desired_count:
-                    return set(range(0, num_timesteps, i))
+                    return set(range(0, num_timesteps, i)) #每隔40步取一个值 [0,40,....,1000]
             raise ValueError(
                 f"cannot create exactly {num_timesteps} steps with an integer stride"
             )
@@ -43,7 +43,7 @@ def space_timesteps(num_timesteps, section_counts):
 class SpacedDiffusion(GaussianDiffusion):
 
     def __init__(self, use_timesteps, **kwargs):
-        self.use_timesteps = set(use_timesteps)
+        self.use_timesteps = set(use_timesteps) #[0,40,...,960]
         self.timestep_map = []
         self.original_num_steps = len(kwargs["betas"])
 
@@ -52,8 +52,8 @@ class SpacedDiffusion(GaussianDiffusion):
         new_betas = []
         for i, alpha_cumprod in enumerate(base_diffusion.alphas_cumprod):
             if i in self.use_timesteps:
-                new_betas.append(1 - alpha_cumprod / last_alpha_cumprod)
-                last_alpha_cumprod = alpha_cumprod
+                new_betas.append(1 - alpha_cumprod / last_alpha_cumprod) # generate new beta_t by ddim = [1-a1,1-bar{a40}/bar{a1},...,1-bar{a960}/bar{a920}]
+                last_alpha_cumprod = alpha_cumprod # ?
                 self.timestep_map.append(i)
         kwargs["betas"] = np.array(new_betas)
         super().__init__(**kwargs)

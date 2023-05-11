@@ -171,7 +171,7 @@ def create_gaussian_diffusion(
     predict_xstart=False,
     rescale_timesteps=False,
     rescale_learned_sigmas=False,
-    timestep_respacing="",
+    timestep_respacing="", # smaple的时候为 ddim25
 ):
     betas = gd.get_named_beta_schedule(noise_schedule, steps)
     if use_kl:
